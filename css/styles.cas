@@ -1,0 +1,753 @@
+/* =========================================================
+    CSS Style by Montihx(Montix)
+    Тема: inspired interface
+    Особенности: неоновая эстетика, скан-линии, анимированные свечения
+   ========================================================= */
+
+/* CSS Custom Properties для единой системы дизайна */
+:root {
+  /* Цветовая палитра в стиле STALKER */
+  --bg: #0c0f0f;           /* Основной фон */
+  --bg-2: #121616;         /* Вторичный фон */
+  --surface: #131818;      /* Поверхности элементов */
+  --surface-2: #192020;    /* Вторичные поверхности */
+  --border: #273131;       /* Цвет границ */
+  --muted: #8aa3a3;        /* Приглушенный текст */
+  --text: #d6e2dd;         /* Основной текст */
+  --accent: #7fd67f;       /* Основной акцент (зеленый) */
+  --accent-2: #5fc45f;     /* Вторичный акцент */
+  --amber: #ffc866;        /* Янтарный акцент */
+  --amber-2: #ffb84d;      /* Яркий янтарный */
+  --green: #00c97a;        /* Зеленый для позитивных действий */
+  --white: #ffffff;        /* Чистый белый */
+
+  /* Система скруглений */
+  --radius-xs: .35rem;
+  --radius-sm: .5rem;
+  --radius-md: .75rem;
+  --radius-lg: .9rem;
+
+  /* Отступы по системе 4px */
+  --gap-1: .25rem;
+  --gap-2: .5rem;
+  --gap-3: .75rem;
+  --gap-4: 1rem;
+  --gap-6: 1.5rem;
+
+  /* Тени для создания глубины */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.30);
+  --shadow-md: 0 8px 26px rgba(0,0,0,.35);
+
+  /* Скорости анимаций */
+  --speed-fast: 120ms;
+  --speed: 220ms;
+
+  /* Эффекты фокуса */
+  --ring-amber: 0 0 0 3px rgba(255,200,102,.22);
+
+  /* Моноширинный шрифт для техно-стилистики */
+  --font-ui: "Share Tech Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Типографическая шкала */
+  --fz-xxs: 12px;
+  --fz-xs: 13px;
+  --fz-sm: 10px;
+  --fz-md: 13px;
+  --fz-lg: 16px;
+}
+
+/* Базовые сбросы и настройки */
+html, body, #root {
+  height: 100%
+}
+
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%; /* Предотвращает авто-масштабирование на iOS */
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  margin: 0;
+  letter-spacing: .02em;        /* Увеличенный межбуквенный интервал */
+  font-size: var(--fz-md);
+  line-height: 1.35;            /* Плотный межстрочный интервал */
+}
+
+/* ==================== АНИМАЦИИ И ЭФФЕКТЫ ==================== */
+
+/* Плавное появление страницы при загрузке */
+.page-fade {
+  animation: pageOn .6s ease both
+}
+
+@keyframes pageOn {
+  from {
+    opacity: 0;
+    filter: saturate(.8) blur(1px)  /* Начальное состояние с размытием */
+  }
+  to {
+    opacity: 1;
+    filter: saturate(1) blur(0)
+  }
+}
+
+/* Типографика */
+h1 {
+  font-size: var(--fz-lg);
+  font-weight: 700;
+  line-height: 1.25
+}
+
+h3 {
+  font-size: var(--fz-md);
+  font-weight: 700;
+  color: var(--amber);          /* Янтарный цвет для заголовков */
+  line-height: 1.25
+}
+
+/* Ссылки с акцентным цветом */
+a {
+  color: var(--amber);
+  text-decoration: none
+}
+
+a:hover {
+  color: var(--amber-2)
+}
+
+/* ==================== ТЕМА STALKER ==================== */
+
+/* Основной контейнер с эффектами неонового свечения и сканирующих линий */
+.theme-stalker {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  
+  /* Сложные градиенты для создания неонового свечения */
+  background:
+    radial-gradient(1200px 600px at 10% -20%, rgba(127,214,127,.06), transparent 60%),
+    radial-gradient(900px 500px at 110% 0%, rgba(255,200,102,.05), transparent 60%),
+    linear-gradient(180deg,var(--surface) 0%,var(--surface-2) 100%);
+  
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.03);
+  overflow: hidden;
+  animation: auraPulse 7s ease-in-out infinite;  /* Пульсирующее свечение */
+  will-change: box-shadow; /* Оптимизация для анимаций */
+}
+
+/* Пульсация неонового свечения */
+@keyframes auraPulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 rgba(0,0,0,0), inset 0 1px 0 rgba(255,255,255,.03); 
+  }
+  50% {    
+    box-shadow: 0 0 28px rgba(255,200,102,.07), inset 0 1px 0 rgba(255,255,255,.05); 
+  }
+}
+
+/* Наложение скан-линий (эффект ЭЛТ-монитора) */
+.theme-stalker::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .5;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0, rgba(0,0,0,.18) 1px, transparent 1px, transparent 3px),
+    radial-gradient(100% 100% at 50% 0, rgba(255,255,255,.04), transparent 70%);
+  mix-blend-mode: overlay;  /* Наложение для естественного вида */
+}
+
+/* Текстура шума/зерна для кинематографичного эффекта */
+.theme-stalker::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .12;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23n)" opacity="0.35"/></svg>');
+  animation: grain 6s steps(6) infinite;  /* Анимированный шум */
+}
+
+/* Анимация движения текстуры шума */
+@keyframes grain {
+  0% { transform: translate(0,0) }
+  20% { transform: translate(-10px,8px) }
+  40% { transform: translate(12px,-6px) }
+  60% { transform: translate(-4px,12px) }
+  80% { transform: translate(8px,-2px) }
+  100% { transform: translate(0,0) }
+}
+
+/* ==================== МАКЕТ И СЕТКА ==================== */
+
+/* Основной контейнер приложения */
+.app-container {
+  max-width: 72rem;
+  margin: 2rem auto;
+  padding: var(--gap-6)
+}
+
+/* Шапка с логотипом и кнопками */
+.layout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-3);
+  margin-bottom: var(--gap-4)
+}
+
+.muted {
+  color: var(--muted)  /* Приглушенный текст для второстепенной информации */
+}
+
+/* Адаптивная сетка макета */
+.grid-main {
+  display: grid;
+  gap: var(--gap-6);
+  grid-template-columns: 1fr;
+  align-items: start;
+  margin-top: var(--gap-4);
+  content-visibility: auto;        /* Оптимизация производительности */
+  contain-intrinsic-size: 1200px 800px; /* Подсказка браузеру для layout shift */
+}
+
+/* Мобильный порядок колонок */
+.grid-left { order: 2 }
+.grid-right { order: 1 }
+
+/* Десктопная версия - 2 колонки */
+@media (min-width:768px) {
+  .grid-main {
+    grid-template-columns: 2fr 1fr  /* Основная область и сайдбар */
+  }
+  .grid-left { order: 1 }
+  .grid-right { order: 2 }
+}
+
+@media (max-width:767px) { 
+  .grid-right { 
+    margin-top: var(--gap-4);  /* Отступ для мобильной версии */
+  } 
+}
+
+/* Контейнер таблицы с скроллом */
+.table-wrap {
+  background: rgba(0,0,0,.12);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: auto;
+  content-visibility: auto;
+  contain-intrinsic-size: 900px 1200px;
+}
+
+/* Боковая панель с липким позиционированием */
+.side-panel {
+  position: sticky;
+  top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-4)
+}
+
+.side-panel > * + * {
+  margin-top: var(--gap-4);  /* Вертикальные отступы между элементами */
+}
+
+@media (max-width:767px) {
+  .side-panel {
+    position: static  /* Отключаем sticky на мобильных */
+  }
+}
+
+/* ==================== ФОРМЫ И КНОПКИ ==================== */
+
+/* Панель поиска */
+.search-bar {
+  display: flex;
+  gap: var(--gap-2);
+  align-items: center
+}
+
+/* Поле ввода в стиле терминала */
+.input {
+  width: 100%;
+  padding: .55rem .75rem;
+  background: #0e1313;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: box-shadow var(--speed), border-color var(--speed), transform var(--speed-fast);
+  box-shadow: inset 0 0 0 1px rgba(255,200,102,.06), inset 0 0 18px rgba(255,200,102,.05);
+  text-shadow: 0 0 1px rgba(255,200,102,.18);  /* Свечение текста */
+  font-size: var(--fz-md);
+  line-height: 1.2;
+}
+
+.input::placeholder {
+  color: #6d8484  /* Приглушенный плейсхолдер */
+}
+
+.input:focus {
+  border-color: var(--amber);
+  box-shadow: var(--ring-amber), inset 0 0 12px rgba(255,200,102,.09);
+  transform: translateY(-1px)  /* Легкий подъем при фокусе */
+}
+
+/* Базовые стили кнопок */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .55rem .9rem;
+  border-radius: var(--radius-sm);
+  border: 1px dashed #2f3a3a;  /* Пунктирная граница */
+  color: var(--text);
+  background: #0f1313;
+  cursor: pointer;
+  transition: transform var(--speed-fast), background var(--speed), border-color var(--speed), box-shadow var(--speed);
+  font-size: var(--fz-md);
+  line-height: 1.25;
+}
+
+.btn--outline {
+  border-color: #3d4a4a
+}
+
+.btn:hover {
+  background: #aea18b;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 1px rgba(255,200,102,.16), inset 0 0 24px rgba(255,200,102,.05)
+}
+
+.btn:active {
+  transform: translateY(1px) scale(.995)  /* Эффект нажатия */
+}
+
+/* Кнопки-иконки (квадратные) */
+.icon-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  border: 1px dashed #2f3a3a;
+  background: #0f1313;
+  color: var(--white)
+}
+
+.icon-btn:hover {
+  background: #262b2b;
+  border-color: var(--amber);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  color: var(--amber)
+}
+
+.btn:hover {
+  background: #141a1a;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 1px rgba(255,200,102,.16), inset 0 0 24px rgba(255,200,102,.05)
+}
+
+.icon-btn--xs {
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: var(--fz-xs)  /* Уменьшенный размер для маленьких кнопок */
+}
+
+/* ==================== ТАБЛИЦА ==================== */
+
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fz-md)
+}
+
+/* Заголовки таблицы */
+.table thead th {
+  text-align: left;
+  color: var(--text);
+  background: #0d1212;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  letter-spacing: .06em;      /* Увеличенный межбуквенный интервал */
+  font-size: var(--fz-xs);
+  line-height: 1.2;
+}
+
+.table th, .table td {
+  padding: .5rem .75rem
+}
+
+/* Строки таблицы с чередованием и ховер-эффектами */
+.table tbody tr {
+  border-top: 1px solid var(--border);
+  transition: background var(--speed), box-shadow var(--speed)
+}
+
+.table tbody tr:nth-child(even) {
+  background: rgba(0,0,0,.07)  /* Чередование фона строк */
+}
+
+.table--hover tbody tr:hover {
+  background: rgba(255,200,102,.07)  /* Янтарный ховер-эффект */
+}
+
+/* Таблица каталога с фиксированной шириной колонок */
+.table--catalog {
+  table-layout: fixed
+}
+
+/* Ширины колонок для таблицы каталога */
+/* === Стабильные ширины колонок каталога по классам === */
+
+/* Десктоп/планшет: начиная с 480px появляются № и Иконка (hide-xs снимается) */
+@media (min-width: 480px) {
+
+  /* Иконка */
+  .table--catalog .col-icon,
+  .table--catalog .icon-cell { width: 3rem; }
+
+  /* Цена */
+  .table--catalog .col-price,
+  .table--catalog td.num-cell:not(.right) { width: 6rem; }
+
+  /* Кнопка */
+  .table--catalog .col-action,
+  .table--catalog td.num-cell.right { width: 3.5rem; }
+}
+
+/* Мобильные: до 480px колонки № и Иконка скрыты (hide-xs), остаются 3 колонки:
+   1 — Название, 2 — Цена, 3 — Кнопка */
+@media (max-width: 479.98px) {
+  .table--catalog .col-price,
+  .table--catalog td.num-cell:not(.right) { width: 6rem; }     /* Цена — 2-я колонка */
+
+  .table--catalog .col-action,
+  .table--catalog td.num-cell.right { width: 3.5rem; }         /* Кнопка — 3-я колонка */
+}
+
+
+/* Выделенная строка */
+.table-row.is-selected {
+  box-shadow: inset 0 0 0 2px rgba(255,200,102,.22);
+  background: rgba(255,200,102,.08)
+}
+
+.cell.center {
+  text-align: center
+}
+
+/* Числовые ячейки с моноширинными цифрами */
+.num-cell.right {
+  text-align: right;
+  font-variant-numeric: tabular-nums  /* Равномерная ширина цифр */
+}
+
+.hide-xs {
+  display: none  /* Скрытие на мобильных */
+}
+
+@media (min-width:480px) {
+  .hide-xs {
+    display: table-cell  /* Показ на планшетах и десктопе */
+  }
+}
+
+/* ==================== АВАТАРЫ И ИКОНКИ ==================== */
+
+.avatar, .avatar-lg, .calc-thumb {
+  background: #0e1414;
+  border-radius: .4rem;
+  object-fit: cover;
+  display: inline-block
+}
+
+.avatar {
+  width: 36px;
+  height: 36px
+}
+
+.avatar-lg {
+  width: 48px;
+  height: 48px;
+  border-radius: .55rem
+}
+
+.calc-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: .35rem
+}
+
+/* ==================== КОМПОНЕНТЫ ИНТЕРФЕЙСА ==================== */
+
+/* Универсальный контейнер для панелей */
+.panel-box {
+  background: #0f1414;
+  border: 1px dashed #344242;
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px rgba(255,200,102,.06), 0 8px 24px rgba(0,0,0,.35);
+  padding: 1rem;
+  overflow: hidden;
+  font-size: var(--fz-md);
+  content-visibility: auto;
+  contain-intrinsic-size: 320px 240px;
+}
+
+/* ==================== КАЛЬКУЛЯТОР КОРЗИНЫ ==================== */
+
+.calc {
+  background: #0f1414;
+  border: 1px dashed #344242;
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px rgba(255,200,102,.06), 0 8px 24px rgba(0,0,0,.35);
+  padding: 1rem;
+  overflow: hidden;
+  font-size: var(--fz-md);
+}
+
+.calc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .5rem
+}
+
+.calc-footer {
+  padding-top: .75rem;
+  border-top: 1px dashed #344242;
+  display: flex;
+  justify-content: space-between;
+  align-items: center
+}
+
+.total {
+  font-weight: 700;
+  color: var(--amber);
+  text-shadow: 0 0 6px rgba(255,200,102,.22);  /* Свечение итоговой суммы */
+  font-size: var(--fz-lg)
+}
+
+/* Строка товара в калькуляторе: сетка 3 колонки */
+.calc-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr 10rem;
+  gap: .75rem;
+  align-items: center;
+}
+
+.calc .calc-row + .calc-row {
+  margin-top: .75rem
+}
+
+.calc-main {
+  min-width: 0  /* Предотвращает переполнение flex-элементов */
+}
+
+.calc-title {
+  font-weight: 600;
+  font-size: var(--fz-md)
+}
+
+.calc-price {
+  font-size: var(--fz-sm);
+  line-height: 1.2;
+  margin-top: .15rem
+}
+
+/* Группа управления количеством - 3 равных квадрата */
+.calc .qty-group {
+  width: 10rem;
+  flex: 0 0 10rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+.calc .qty-btn,
+.calc input[type="number"] {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  line-height: 44px;
+  text-align: center;
+  font-size: var(--fz-md);
+  border-radius: var(--radius-sm);
+}
+
+.calc .qty-btn {
+  border: 1px dashed #344242;
+  background: #0f1313;
+  color: var(--amber);
+  transition: transform var(--speed-fast), box-shadow var(--speed), background var(--speed);
+}
+
+.calc .qty-btn:hover {
+  border-color: var(--amber);
+  transform: translateY(-0.5px);
+  box-shadow: var(--shadow-sm);
+  background: #151c1c;
+  cursor: pointer
+}
+
+.calc input[type="number"] {
+  padding: 0;
+  background: #0e1313;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  -moz-appearance: textfield;  /* Скрытие стрелок в Firefox */
+}
+
+/* Скрытие стрелок в WebKit браузерах */
+.calc input[type="number"]::-webkit-outer-spin-button,
+.calc input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ==================== АДАПТИВНОСТЬ ==================== */
+
+/* Предотвращение масштабирования на iOS */
+@media (max-width:480px) {
+  input, select, textarea {
+    font-size: 16px;  /* Предотвращает зум на iOS */
+  }
+}
+
+/* Мобильная адаптация калькулятора */
+@media (max-width:420px) {
+  .calc-row {
+    grid-template-columns: 1.5rem 1fr 8.5rem;
+    gap: .5rem
+  }
+  .calc .qty-group {
+    width: 8.5rem;
+    gap: .4rem
+  }
+  .calc .qty-btn, .calc input[type="number"] {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    line-height: 36px
+  }
+  .calc-price {
+    font-size: 13px
+  }
+  .table {
+    font-size: 14px
+  }
+  .table thead th {
+    font-size: 12px
+  }
+  .input, .btn {
+    font-size: 14px
+  }
+}
+
+/* ==================== ДОПОЛНИТЕЛЬНЫЕ КОМПОНЕНТЫ ==================== */
+
+/* Кнопка "Показать ещё" */
+.show-more {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0
+}
+
+/* Система уведомлений и алертов */
+.alert {
+  display: none;
+  background: #2a0f10;  /* Темно-красный фон для ошибок */
+  color: #ff9b9b;       /* Светло-красный текст */
+  border: 1px dashed #5b2a2a;
+  padding: .75rem;
+  border-radius: var(--radius-md);
+  margin-top: 1rem
+}
+
+.alert.show {
+  display: block
+}
+
+/* ==================== АНИМАЦИИ КОМПОНЕНТОВ ==================== */
+
+.fade-in {
+  animation: fadeIn .45s ease both
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px)
+  }
+  to {
+    opacity: 1;
+    transform: none
+  }
+}
+
+.elevate {
+  animation: elevateIn var(--speed) ease both
+}
+
+@keyframes elevateIn {
+  from {
+    transform: translateY(4px);
+    opacity: 0
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1
+  }
+}
+
+/* Анимация вспышки для обратной связи */
+.flash {
+  animation: flash .35s ease-out
+}
+
+@keyframes flash {
+  from {
+    box-shadow: 0 0 0 0 rgba(255,200,102,.0)
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255,200,102,.18)  /* Пик свечения */
+  }
+  to {
+    box-shadow: 0 0 0 0 rgba(255,200,102,.0)
+  }
+}
+
+/* ==================== ОПТИМИЗАЦИИ ИЗОБРАЖЕНИЙ ==================== */
+
+img {
+  transition: opacity var(--speed) ease
+}
+
+img[loading="lazy"] {
+  opacity: .95  /* Легкая прозрачность для ленивой загрузки */
+}
+
+img[loading="lazy"].error {
+  opacity: .3   /* Полупрозрачность для битых изображений */
+}
+
+/* Отключение анимаций для пользователей с reduced-motion */
+@media (prefers-reduced-motion:reduce) {
+  * {
+    animation: none!important;
+    transition: none!important
+  }
+}
