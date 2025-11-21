@@ -637,34 +637,6 @@
     "icon_local_path": "972aeae8a3d7b940ddaa7c7e95c0930b"
   },
   {
-    "item_name": "Стабилизированный раствор (10 мл)",
-    "price": 125000,
-    "Url": "https://so-wiki.ru/wiki/%D0%A1%D1%82%D0%B0%D0%B1%D0%B8%D0%BB%D0%B8%D0%B7%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D1%8B%D0%B9_%D1%80%D0%B0%D1%81%D1%82%D0%B2%D0%BE%D1%80_(10_%D0%BC%D0%BB)",
-    "item_id": "234b8285252feaac69a20565e2914596",
-    "icon_local_path": "3a99a8eb0490996fccb40addfd52fcdf"
-  },
-  {
-    "item_name": "Стабилизированный раствор (100 мл)",
-    "price": 125000,
-    "Url": "https://so-wiki.ru/wiki/%D0%A1%D1%82%D0%B0%D0%B1%D0%B8%D0%BB%D0%B8%D0%B7%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D1%8B%D0%B9_%D1%80%D0%B0%D1%81%D1%82%D0%B2%D0%BE%D1%80_(100_%D0%BC%D0%BB)",
-    "item_id": "6cac8df83e8892fe368f3ab040cc9d6c",
-    "icon_local_path": "c0f24535e980e07f5a2bf61bee395ad0"
-  },
-  {
-    "item_name": "Стабилизированный раствор (25 мл)",
-    "price": 125000,
-    "Url": "https://so-wiki.ru/wiki/%D0%A1%D1%82%D0%B0%D0%B1%D0%B8%D0%BB%D0%B8%D0%B7%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D1%8B%D0%B9_%D1%80%D0%B0%D1%81%D1%82%D0%B2%D0%BE%D1%80_(25_%D0%BC%D0%BB)",
-    "item_id": "170804ecbdb1bc6e57cc26e3e0c4270d",
-    "icon_local_path": "ac6530fc6e628f83730812976922a293"
-  },
-  {
-    "item_name": "Стабилизированный раствор (50 мл)",
-    "price": 125000,
-    "Url": "https://so-wiki.ru/wiki/%D0%A1%D1%82%D0%B0%D0%B1%D0%B8%D0%BB%D0%B8%D0%B7%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D1%8B%D0%B9_%D1%80%D0%B0%D1%81%D1%82%D0%B2%D0%BE%D1%80_(50_%D0%BC%D0%BB)",
-    "item_id": "abff1811c3f8948f6b2edb295884d30c",
-    "icon_local_path": "353d2b798c301293c36f78cb733bcf11"
-  },
-  {
     "item_name": "Стальная пластина",
     "price": 15000,
     "Url": "https://so-wiki.ru/wiki/%D0%A1%D1%82%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F_%D0%BF%D0%BB%D0%B0%D1%81%D1%82%D0%B8%D0%BD%D0%B0",
@@ -838,13 +810,6 @@
     "Url": "https://so-wiki.ru/wiki/%D0%91%D0%B0%D0%BD%D0%BA%D0%B0_%D1%81%D0%BE%D0%BB%D0%B8%D0%B4%D0%BE%D0%BB%D0%B0",
     "item_id": "61198a22438db9de2bc6f26c48bdd5a0",
     "icon_local_path": "517623ea3fa824925fe198827e971bed"
-  },
-  {
-    "item_name": "Банка тушенки",
-    "price": 999999,
-    "Url": "https://so-wiki.ru/wiki/%D0%91%D0%B0%D0%BD%D0%BA%D0%B0_%D1%82%D1%83%D1%88%D0%B5%D0%BD%D0%BA%D0%B8",
-    "item_id": "077fd1f5a83df47e7fbb2411a01ac90b",
-    "icon_local_path": "b289ab02a0274209faac969c61b0f546"
   },
   {
     "item_name": "Белый гриб",
@@ -1909,13 +1874,6 @@
     "Url": "https://so-wiki.ru/wiki/%D0%A0%D0%B0%D1%81%D1%82%D0%B2%D0%BE%D1%80_%D0%93%D0%B5%D0%BF%D0%B0%D1%80%D0%B8%D0%BD%D0%B0",
     "item_id": "c00d2bdbd9ca29ff2c00c1548962d130",
     "icon_local_path": "1ab414118e5824f52a47f8ec9146b0b1"
-  },
-  {
-    "item_name": "Рог",
-    "price": 20000,
-    "Url": "https://so-wiki.ru/wiki/%D0%A0%D0%BE%D0%B3",
-    "item_id": "9fe6209aee770285068e6460aa381149",
-    "icon_local_path": "7f6c252313ecb07790c80cb893ba6abb"
   },
   {
     "item_name": "Рогатик дудчатый",
