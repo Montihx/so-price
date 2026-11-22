@@ -164,16 +164,20 @@ export function Tabs({ items, value, onChange, label }) {
 }
 
 /** Шапка карточки: иконка на оливковом свечении (как силуэт в окне снаряжения), название, цена */
-export function ItemHead({ item }) {
+export function ItemHead({ item, points = [] }) {
   const h = React.createElement;
   const has = Number(item.price) > 0;
+  const last = !has && points.length ? points[points.length - 1] : null; // последняя известная цена
   return h('div', { className: 'card-head' },
     h('div', { className: 'card-stage' }, h(ItemIcon, { path: item.icon_local_path, size: 72 })),
     h('div', { className: 'card-info' },
       h('div', { className: 'card-name' }, item.item_name),
       h('div', { className: 'card-price ' + priceTone(item.price) }, has ? boardPrice(item.price) : 'Нет объявлений'),
       h('div', { className: 'card-sub' },
-        has && item.price_updated ? 'минимальная цена на доске, ' + fmtDate(item.price_updated) : 'на доске сейчас никто не продаёт'),
+        has && item.price_updated ? 'минимальная цена на доске, ' + fmtDate(item.price_updated)
+          : last ? h(React.Fragment, null, 'на доске сейчас никто не продаёт; последняя цена ',
+              h('b', { className: priceTone(last[1]) }, boardPrice(last[1])), ', ' + fmtDate(last[0]))
+          : 'на доске сейчас никто не продаёт'),
       item.Url ? h('a', { className: 'link', href: item.Url, target: '_blank', rel: 'noreferrer noopener' }, 'Открыть на SO-Wiki') : null
     )
   );

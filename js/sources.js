@@ -2,6 +2,8 @@
 /* Блок «Как получить / Где используется» для карточки предмета.
    Данные — data/sources.json (собирается tools/wiki_sources.py со страниц so-wiki.ru). */
 
+import { TradeBlock } from './trade.js';
+
 const SOURCES_URL = './data/sources.json';
 const WIKI = 'https://so-wiki.ru/wiki/';
 const SHOW = 10; // сколько пунктов показывать до «ещё N»
@@ -198,6 +200,7 @@ export function SourcesBlock({ item }) {
       facts.map(([k, v]) => h('div', { key: k }, h('dt', null, k), h('dd', null, v)))) : null,
     badges.length ? h('div', { className: 'src-badges' },
       badges.map(([t, c]) => h('span', { key: t, className: 'src-badge ' + c }, t))) : null,
+    h(TradeBlock, { item, rec }),
     h('div', { className: 'src-head' }, 'Как получить'),
     get.length
       ? h('div', { className: 'src-list' }, get.map(([s, m]) => sec(s, m)))

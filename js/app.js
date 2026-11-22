@@ -3,7 +3,9 @@ import {
   norm, isAscii, latinToCyrillic,
   escapeRegExp, resolveIconPath, useDebounced
 } from './utils.js';
-import { SourcesBlock, Icon } from './sources.js';
+import { SourcesBlock, Icon, loadSources } from './sources.js';
+import { loadHistory, pointsOf, PriceHistory } from './history.js';
+import { bestSale } from './trade.js';
 import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPrice, Window, Tabs, ItemHead, CalcRow } from './board.js';
 
 (function () {
@@ -49,7 +51,10 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
     const [view, setView] = useState(() => { try { return localStorage.getItem('view') === 'grid' ? 'grid' : 'list'; } catch { return 'list'; } });
     useEffect(() => { try { localStorage.setItem('view', view); } catch {} }, [view]);
     
-    const qDeb = useDebounced(query, 200); // Дебаунс поискового запроса
+    const qDeb = useDebounced(query, 200);
+    const [hist, setHist] = useState(null);                    // история цен (data/history.json)
+    useEffect(() => { loadHistory().then(setHist); }, []);
+    const [srcs, setSrcs] = useState(null);                    // сведения для «доска или NPC» в калькуляторе // Дебаунс поискового запроса
 
     /* Загрузка данных каталога с сервера */
     const loadData = useCallback(async () => {
@@ -151,6 +156,20 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
       return cur ? { ...it, price: cur.price, price_updated: cur.price_updated, icon_local_path: cur.icon_local_path, stale: false } : { ...it, stale: data.length > 0 };
     });
     const total = cartItems.reduce((s, i) => s + (i.stale ? 0 : (Number(i.price)||0) * (Number(i.qty)||0)), 0); // Общая сумма
+    // «доска или NPC»: сведения грузим, только когда в калькуляторе что-то есть
+    useEffect(() => { if (cartItems.length && !srcs) loadSources().then(setSrcs).catch(() => {}); }, [cartItems.length, srcs]);
+    const sale = useMemo(() => {
+      if (!srcs) return null;
+      let best = 0, npcCount = 0, any = false;
+      for (const i of cartItems) {
+        if (i.stale) continue;
+        const b = bestSale(i.price, srcs.items && srcs.items[i.item_id]);
+        if (b.npc) any = true;
+        if (b.where === 'npc') npcCount++;
+        best += b.best * (Number(i.qty) || 0);
+      }
+      return any ? { best, npcCount } : null;
+    }, [srcs, cartItems]);
 
     /* Добавление товара в корзину */
     const addToCart = useCallback((item, qty = 1) => {
@@ -252,7 +271,8 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
     const selectionCard = h(Window, { title: selected ? 'Предмет' : 'Предмет не выбран', className: 'selection-card' },
       selected
         ? h(React.Fragment, null,
-            h(ItemHead, { item: selected }),
+            h(ItemHead, { item: selected, points: pointsOf(hist, selected) }),
+            h(PriceHistory, { points: pointsOf(hist, selected), key: 'h' + idOf(selected) }),
             h(SourcesBlock, { item: selected, key: idOf(selected) }))
         : h('div', { className: 'win-empty' }, 'Выберите предмет в списке: здесь появятся цена и где его взять.')
     );
@@ -271,7 +291,13 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
             key: idOf(it), it,
             onQty: (q) => setCart(c => ({ ...c, [idOf(it)]: { ...it, qty: q } })),
             onRemove: () => setCart(c => { const n = { ...c }; delete n[idOf(it)]; return n; })
-          })))
+          }))),
+      sale && cartItems.length > 0 ? h('div', { className: 'calc-best' },
+        h('div', { className: 'calc-best-row' }, h('span', null, 'Всё на доске'), h('span', null, boardPrice(total))),
+        h('div', { className: 'calc-best-row is-win' },
+          h('span', null, 'Лучшим способом',
+            h('span', { className: 'muted' }, sale.npcCount ? ' (NPC: ' + sale.npcCount + ' предм.)' : ' (всё на доске)')),
+          h('span', null, boardPrice(sale.best)))) : null
     );
 
     const panel = h('aside', { className: 'side-panel grid-right' }, selectionCard, calc);

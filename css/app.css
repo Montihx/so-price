@@ -378,3 +378,55 @@ a { color: var(--gold); }
 @media (prefers-reduced-motion: reduce) {
   .spin, .src-chev, .calc.flash { animation: none; transition: none; }
 }
+
+/* ---------------- история цены ---------------- */
+.hist { display: grid; gap: var(--s2); margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid #0d0d0d; }
+.hist-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); }
+.hist-delta { display: inline-flex; align-items: center; gap: 2px; font-size: 14px; color: var(--text); font-variant-numeric: tabular-nums; }
+.hist-arrow { color: var(--muted); }
+.hist-arrow.up { transform: rotate(-90deg); color: var(--p-red); }   /* дороже */
+.hist-arrow.down { transform: rotate(90deg); color: var(--p-green); } /* дешевле */
+.spark { background: #202020; box-shadow: inset 0 0 0 1px #2c2c2c; }
+.spark-plot { position: relative; height: 72px; margin: 0 6px; }
+.spark-svg { display: block; width: 100%; height: 72px; cursor: crosshair; }
+.spark-base { stroke: #333; stroke-width: 1; }
+.spark-line.is-gap { stroke-dasharray: 4 4; opacity: .7; }
+.spark-line { fill: none; stroke: var(--gold); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.spark-cross { stroke: #555; stroke-width: 1; }
+.spark-dot {
+  position: absolute; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%;
+  background: var(--gold); box-shadow: 0 0 0 2px #202020; pointer-events: none;
+}
+.spark-dot.is-on { width: 10px; height: 10px; margin: -5px 0 0 -5px; }
+.spark-tip {
+  position: absolute; top: 2px; white-space: nowrap; pointer-events: none;
+  padding: 3px var(--s2); background: rgba(22, 22, 22, .96); box-shadow: 0 0 0 1px #3a3a3a;
+  color: var(--muted); font-size: 12px; z-index: 5;
+}
+.spark-tip b { color: #fff; font-variant-numeric: tabular-nums; }
+.spark-axis { padding: 2px 6px 3px; display: flex; justify-content: space-between; color: var(--faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+.hist-table > summary { cursor: pointer; color: var(--muted); font-size: 13px; list-style: none; }
+.hist-table > summary::-webkit-details-marker { display: none; }
+.hist-table > summary:hover { color: var(--text); }
+.hist-table table { margin-top: var(--s1); width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.hist-table td { padding: 2px var(--s2); background: #232323; border-bottom: 2px solid var(--win); }
+.hist-table td:last-child { text-align: right; }
+
+/* ---------------- доска или NPC ---------------- */
+.trade { display: grid; gap: var(--s2); }
+.trade-grp { display: grid; gap: 2px; }
+.trade-cap { color: var(--faint); font-size: 12px; }
+.trade-row {
+  display: grid; grid-template-columns: 76px auto minmax(0, 1fr); align-items: center; gap: var(--s2);
+  min-height: 30px; padding: 2px var(--s2); background: linear-gradient(90deg, #303030, #2a2a2a);
+}
+.trade-row.is-win { background: linear-gradient(90deg, #45432f, #343328); box-shadow: inset 2px 0 0 var(--gold); }
+.trade-lbl { color: var(--muted); font-size: 14px; }
+.trade-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+.trade-note { min-width: 0; text-align: right; color: var(--faint); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trade-tag { color: var(--gold); font-size: 12px; }
+
+/* итоги калькулятора */
+.calc-best { display: grid; gap: 2px; margin-top: var(--s2); }
+.calc-best-row { display: flex; justify-content: space-between; gap: var(--s2); padding: 4px var(--s2); background: #232323; font-size: 14px; font-variant-numeric: tabular-nums; }
+.calc-best-row.is-win { box-shadow: inset 2px 0 0 var(--gold); color: #fff; }
