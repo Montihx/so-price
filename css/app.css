@@ -432,6 +432,10 @@ a { color: var(--gold); }
 .trade-val { font-weight: 700; font-variant-numeric: tabular-nums; }
 .trade-note { min-width: 0; text-align: right; color: var(--faint); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .trade-tag { color: var(--gold); font-size: 12px; }
+.trade-req { grid-column: 1 / -1; display: flex; align-items: center; gap: 5px; margin-top: -2px; padding-bottom: 2px; color: var(--muted); font-size: 12px; }
+.trade-req.is-need { color: var(--p-orange); }
+.trade-req .head-ico { color: currentColor; }
+.trade-foot { margin-top: 2px; color: var(--faint); font-size: 12px; line-height: 1.4; }
 
 /* итоги калькулятора */
 .calc-best { display: grid; gap: 2px; margin-top: var(--s2); }

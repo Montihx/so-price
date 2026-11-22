@@ -82,7 +82,7 @@ export function getIconCandidates(p){
   const head = sp[1]||first; 
   const tail = sp[2]||'';
   // свои иконки: сначала сжатая webp-копия, затем png
-  if(/^\.\/icons\/[^/]+\.png$/.test(head)) add(head.slice(0,-4) + '.webp' + tail);
+  if(/^\.\/icons\/(?:game\/)?[^/]+\.png$/.test(head)) add(head.slice(0,-4) + '.webp' + tail);
   add(head + tail);
 
   // Генерация кандидатов с разными расширениями изображений

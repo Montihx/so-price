@@ -35,7 +35,7 @@ import { CatSelect, BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SI
   /* Главный компонент приложения */
   function App() {
     // Состояния приложения
-    const [data, setData] = useState([]); // Основные данные каталога
+    const [rawData, setData] = useState([]); // Основные данные каталога
     const [query, setQuery] = useState(''); // Строка поиска
     const [selected, setSelected] = useState(null); // Выбранный товар
     const [cart, setCart] = useState(() => {
@@ -57,6 +57,12 @@ import { CatSelect, BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SI
     const [srcs, setSrcs] = useState({});                      // сведения предметов калькулятора: { item_id: rec|null }
     const [meta, setMeta] = useState({ groups: [], g: {} });   // категории (data/meta.json)
     useEffect(() => { loadMeta().then(setMeta); }, []);
+    // иконки из игры вместо заглушки с вики (список в meta.gi); data.json не меняется
+    const data = useMemo(() => {
+      const gi = new Set(meta.gi || []);
+      if (!gi.size) return rawData;
+      return rawData.map(x => (gi.has(x.item_id) ? { ...x, icon_local_path: resolveIconPath('icons/game/' + x.item_id) } : x));
+    }, [rawData, meta]);
     const [cat, setCat] = useState('all');                     // выбранная категория // Дебаунс поискового запроса
 
     /* Загрузка данных каталога с сервера */

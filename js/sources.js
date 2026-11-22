@@ -2,7 +2,7 @@
 /* Блок «Как получить / Где используется» для карточки предмета.
    Данные — data/sources.json (собирается tools/wiki_sources.py со страниц so-wiki.ru). */
 
-import { TradeBlock } from './trade.js';
+import { TradeBlock, buyNote } from './trade.js';
 
 const SRC_DIR = './data/src/';
 const META_URL = './data/meta.json';
@@ -197,7 +197,12 @@ export function SourcesBlock({ item }) {
   const info = rec.info || {};
   const secs = rec.sections || [];
   const get = [];
-  for (const o of GET_ORDER) { const s = secs.find(x => x.t === o.t); if (s) get.push([s, o]); }
+  for (const o of GET_ORDER) {
+    let s = secs.find(x => x.t === o.t);
+    // у NPC-продавца очки торговли нужны, а не начисляются
+    if (s && s.t === 'Продаёт' && s.x) s = { ...s, x: Object.fromEntries(Object.entries(s.x).map(([k, v]) => [k, buyNote(v)])) };
+    if (s) get.push([s, o]);
+  }
   for (const s of secs) if ((s.k === 'get' || s.k === 'other') && !SERVICE_SRC.includes(s.t) && !GET_ORDER.some(o => o.t === s.t)) get.push([s, null]);
   // ремонт и патроны — отдельный блок; одноимённые разделы сливаются
   const service = [];
