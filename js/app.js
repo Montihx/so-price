@@ -6,7 +6,7 @@ import {
 import { SourcesBlock, Icon, loadSource, loadMeta } from './sources.js';
 import { loadHistory, pointsOf, PriceHistory } from './history.js';
 import { bestSale } from './trade.js';
-import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPrice, Window, Tabs, ItemHead, CalcRow } from './board.js';
+import { CatSelect, BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPrice, Window, Tabs, ItemHead, CalcRow } from './board.js';
 
 (function () {
   const { useEffect, useMemo, useState, useCallback } = React;
@@ -245,6 +245,13 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
           h(Icon, { name: 'refresh', size: 16, cls: 'ico' + (loading ? ' spin' : '') })))
     );
 
+    // пункты списка категорий: «Все» + группы со счётчиками
+    const catOptions = useMemo(() => {
+      const n = meta.groups.map(() => 0);
+      for (const x of data) { const g = meta.g[x.item_id]; if (g != null) n[g]++; }
+      return [{ key: 'all', label: 'Все', count: data.length }].concat(meta.groups.map(([k, t], i) => ({ key: k, label: t, count: n[i] })));
+    }, [meta, data]);
+
     const isSel = (r) => !!selected && (r.item_id || r._i) === (selected.item_id || selected._i);
     const onSelect = (r) => () => {
       setSelected(r);
@@ -281,29 +288,24 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
       title: 'Предметы', icon: 'cube', className: 'list-win grid-left',
       tools: [viewBtn('list', 'rows', 'Списком'), viewBtn('grid', 'cells', 'Сеткой, как инвентарь')],
       tabs: h(Tabs, { label: 'Наличие на доске', value: avail, onChange: setAvail, items: [
-        ['all', 'Все', counts.all], ['listed', 'Есть на доске', counts.listed], ['none', 'Нет объявлений', counts.none]] }),
+        ['all', 'Все', counts.all, 'list'], ['listed', 'Есть на доске', counts.listed, 'tag'], ['none', 'Нет объявлений', counts.none, 'tagoff']] }),
       foot: [
         h('span', { key: 'n', className: 'foot-stat' }, h(Icon, { name: 'cube', size: 13, cls: 'ico' }), ' ' + sorted.length + ' предм.'),
         h(Pager, { key: 'p', page: curPage, pages, setPage })]
     },
       h('div', { className: 'sortbar' },
         h('span', { className: 'sortbar-lbl' }, 'Сортировка:'),
-        h(SortHead, { label: 'Название', k: 'name', sort, setSort }),
-        h(SortHead, { label: 'Цена', k: 'price', sort, setSort }),
-        meta.groups.length ? h('label', { className: 'catsel' },
+        h(SortHead, { label: 'Название', k: 'name', sort, setSort, icon: 'alpha' }),
+        h(SortHead, { label: 'Цена', k: 'price', sort, setSort, icon: 'coins' }),
+        meta.groups.length ? h('div', { className: 'catsel' },
           h('span', { className: 'sortbar-lbl' }, 'Категория:'),
-          h('select', { className: 'field catsel-input', value: cat, onChange: (e) => setCat(e.target.value), 'aria-label': 'Категория' },
-            h('option', { value: 'all' }, 'Все'),
-            meta.groups.map(([k, t], i) => {
-              let n = 0; for (const x of data) if (meta.g[x.item_id] === i) n++;
-              return h('option', { key: k, value: k }, t + ' (' + n + ')');
-            }))) : null),
+          h(CatSelect, { value: cat, onChange: setCat, options: catOptions })) : null),
       body
     );
 
     /* Правая панель: окно предмета и калькулятор */
     const idOf = (x) => x.item_id || x._i;
-    const selectionCard = h(Window, { title: selected ? 'Предмет' : 'Предмет не выбран', className: 'selection-card' },
+    const selectionCard = h(Window, { title: selected ? 'Предмет' : 'Предмет не выбран', icon: 'tag', className: 'selection-card' },
       selected
         ? h(React.Fragment, null,
             h(ItemHead, { item: selected, points: pointsOf(hist, selected) }),
@@ -313,7 +315,7 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
     );
 
     const calc = h(Window, {
-      title: 'Калькулятор', className: 'calc',
+      title: 'Калькулятор', icon: 'calc', className: 'calc',
       tools: cartItems.length ? h('span', { className: 'win-count' }, String(cartItems.length)) : null,
       foot: cartItems.length > 0 ? [
         h('div', { key: 't', className: 'money', title: 'Сумма по минимальным ценам' },

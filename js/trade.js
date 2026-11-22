@@ -2,6 +2,7 @@
 /* «Доска или NPC — где выгоднее»: цены скупки и продажи у NPC берутся из примечаний разделов
    sources.json («Везувий, 6 254 р. · +4 очк. торговли (…)»). */
 import { boardPrice } from './board.js';
+import { Icon } from './sources.js';
 
 const SELL_TITLES = ['Повышает очки торговли при продаже'];   // NPC покупает у игрока
 const BUY_TITLE = 'Продаёт';                                    // NPC продаёт игроку
@@ -64,13 +65,13 @@ export function TradeBlock({ item, rec }) {
     h('span', { className: 'trade-note' }, win ? h('span', { className: 'trade-tag' }, 'выгоднее') : note || ''));
 
   return h('div', { className: 'trade' },
-    h('div', { className: 'src-head' }, 'Где выгоднее'),
+    h('div', { className: 'src-head' }, h(Icon, { name: 'scales', size: 13, cls: 'head-ico' }), 'Где выгоднее'),
     sell ? h('div', { className: 'trade-grp' },
-      h('div', { className: 'trade-cap' }, 'Продать'),
+      h('div', { className: 'trade-cap' }, h(Icon, { name: 'sell', size: 12, cls: 'head-ico' }), 'Продать'),
       row('На доске', board, board ? 'по минимальной цене' : 'нет объявлений', board > sell.price),
       row('NPC', sell.price, who(sell), sell.price >= board)) : null,
     buy ? h('div', { className: 'trade-grp' },
-      h('div', { className: 'trade-cap' }, 'Купить'),
+      h('div', { className: 'trade-cap' }, h(Icon, { name: 'cart', size: 12, cls: 'head-ico' }), 'Купить'),
       row('На доске', board, board ? '' : 'нет объявлений', board > 0 && board < buy.price),
       row('NPC', buy.price, who(buy), !board || buy.price <= board)) : null
   );

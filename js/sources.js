@@ -47,6 +47,27 @@ const ICONS = {
   bullet: [['path', { d: 'M10 21V10c0-3 1-5.5 2-7 1 1.5 2 4 2 7v11z' }], ['path', { d: 'M10 17h4' }]],
   link:   [['path', { d: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1' }], ['path', { d: 'M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1' }]],
   check:  [['path', { d: 'M5 12.5l4.5 4.5L19 7.5' }]],
+  // категории
+  rifle:   [['path', { d: 'M2 8.5h20M5.5 8.5v4H17v-4' }], ['path', { d: 'M2 8.5V15l3.5-2.5' }], ['path', { d: 'M10 12.5L9 18h2.8l.9-5.5' }], ['path', { d: 'M14.5 12.5l1 3' }], ['path', { d: 'M18.5 8.5V6.5' }]],
+  scope:   [['path', { d: 'M2.5 6.5h4L8 9h8l1.5-2.5h4v9h-4L16 13H8l-1.5 2.5h-4z' }], ['path', { d: 'M10 13v4.5M14 13v4.5M8.5 17.5h7' }]],
+  grenade: [['circle', { cx: 11, cy: 14.5, r: 6 }], ['path', { d: 'M9 8.7V6h4v2.7' }], ['path', { d: 'M13 6l5-2.5' }], ['path', { d: 'M11 11.5v6M8 14.5h6' }]],
+  vest:    [['path', { d: 'M8 3.5h2.5L12 6l1.5-2.5H16l4 3.5v13.5H4V7z' }], ['path', { d: 'M12 6v14.5M7.5 13h3M13.5 13h3' }]],
+  medkit:  [['path', { d: 'M3 7h18v13H3z' }], ['path', { d: 'M9 7V4.5h6V7' }], ['path', { d: 'M12 10.5v6M9 13.5h6' }]],
+  crystal: [['path', { d: 'M12 2.5l6 6.5-6 12.5L6 9z' }], ['path', { d: 'M6 9h12M12 2.5L10 9l2 12.5L14 9z' }]],
+  // сортировка, вкладки, окна
+  alpha:   [['path', { d: 'M3 18L7 6l4 12M4.5 14h5' }], ['path', { d: 'M18 5v14M15 16l3 3 3-3' }]],
+  tag:     [['path', { d: 'M3 12V3.5h8.5L21 13l-8 8z' }], ['circle', { cx: 7.5, cy: 7.5, r: 1.5 }]],
+  tagoff:  [['path', { d: 'M3 12V3.5h8.5L21 13l-8 8z' }], ['path', { d: 'M3 3l18 18' }]],
+  calc:    [['path', { d: 'M5 3h14v18H5z' }], ['path', { d: 'M8 6.5h8v3H8z' }],
+            ['path', { d: 'M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01' }]],
+  chart:   [['path', { d: 'M4 4v16h16' }], ['path', { d: 'M7.5 14.5l3.5-4 3 3 5-6' }]],
+  scales:  [['path', { d: 'M12 4v16M8 20h8M5 7h14' }], ['path', { d: 'M5 7l-3 6.5h6zM19 7l-3 6.5h6z' }]],
+  pin:     [['path', { d: 'M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z' }], ['circle', { cx: 12, cy: 9.5, r: 2.5 }]],
+  external:[['path', { d: 'M14 4h6v6M20 4l-9 9' }], ['path', { d: 'M18 14v6H4V6h6' }]],
+  weight:  [['path', { d: 'M5.5 20l2-11h9l2 11z' }], ['circle', { cx: 12, cy: 5.5, r: 2 }]],
+  star:    [['path', { d: 'M12 3.5l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.4l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z' }]],
+  folder:  [['path', { d: 'M3 6h6l2 2h10v11H3z' }]],
+  sell:    [['path', { d: 'M4 14v6h16v-6' }], ['path', { d: 'M12 15V4M7.5 8.5L12 4l4.5 4.5' }]],
   wallet: [['path', { d: 'M3 7h16a2 2 0 0 1 2 2v9H3z' }], ['path', { d: 'M3 7l12-3v3' }], ['path', { d: 'M16 13h2' }]],
 };
 
@@ -208,15 +229,15 @@ export function SourcesBlock({ item }) {
     onExpand: () => setOpen(o => ({ ...o, [s.t]: true }))
   });
 
-  const facts = [['Категория', info.category], ['Уровень', info.level], ['Вес', info.weight]].filter(x => x[1]);
+  const facts = [['Категория', info.category, 'folder'], ['Уровень', info.level, 'star'], ['Вес', info.weight, 'weight']].filter(x => x[1]);
 
   return h('div', { className: 'src' },
     facts.length ? h('dl', { className: 'src-facts' },
-      facts.map(([k, v]) => h('div', { key: k }, h('dt', null, k), h('dd', null, v)))) : null,
+      facts.map(([k, v, ic]) => h('div', { key: k }, h('dt', null, h(Icon, { name: ic, size: 12, cls: 'fact-ico' }), k), h('dd', null, v)))) : null,
     badges.length ? h('div', { className: 'src-badges' },
       badges.map(([t, c]) => h('span', { key: t, className: 'src-badge ' + c }, t))) : null,
     h(TradeBlock, { item, rec }),
-    h('div', { className: 'src-head' }, 'Как получить'),
+    h('div', { className: 'src-head' }, h(Icon, { name: 'pin', size: 13, cls: 'head-ico' }), 'Как получить'),
     get.length
       ? h('div', { className: 'src-list' }, get.map(([s, m]) => sec(s, m)))
       : h('div', { className: 'muted text-sm' }, 'Способ получения на SO-Wiki не указан.'),
@@ -225,7 +246,7 @@ export function SourcesBlock({ item }) {
       use.length ? h('details', { key: 'use', className: 'src-sec' },
         h(Summary, { icon: 'list', title: 'Где используется', count: useTotal }),
         h('div', { className: 'src-list src-nested' }, use.map(s => sec(s, null)))) : null) : null,
-    service.length ? h('div', { className: 'src-head' },
+    service.length ? h('div', { className: 'src-head' }, h(Icon, { name: 'wrench', size: 13, cls: 'head-ico' }), 
       service.length > 1 ? 'Совместимость и ремонт' : service[0][1].fmt ? 'Совместимость' : 'Ремонт') : null,
     service.length ? h('div', { className: 'src-list' }, service.map(([s, m]) => sec(s, m))) : null,
     info.desc ? h('p', { className: 'src-desc muted' }, info.desc) : null,

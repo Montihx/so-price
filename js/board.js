@@ -110,12 +110,13 @@ export const GridCell = React.memo(function GridCell({ r, selected, onSelect, on
 });
 
 /** Переключатель сортировки (как флажок «Автосортировка» в инвентаре) */
-export function SortHead({ label, k, sort, setSort }) {
+export function SortHead({ label, k, sort, setSort, icon }) {
   const h = React.createElement;
   const active = sort.key === k;
   const click = () => setSort(s => (s.key === k ? { key: k, dir: -s.dir } : { key: k, dir: 1 }));
   return h('button', { className: 'sort' + (active ? ' is-active' : ''), onClick: click, 'aria-pressed': active ? 'true' : 'false',
     title: active ? 'Сменить направление' : 'Сортировать: ' + label },
+    icon ? h(Icon, { name: icon, size: 13, cls: 'sort-lead' }) : null,
     label,
     h(Icon, { name: 'chevron', size: 11, cls: 'sort-ico' + (active && sort.dir < 0 ? ' up' : '') })
   );
@@ -156,10 +157,10 @@ export function Window({ title, hotkey, icon, tools, tabs, foot, className, body
 export function Tabs({ items, value, onChange, label }) {
   const h = React.createElement;
   return h('div', { className: 'tabs', role: 'tablist', 'aria-label': label },
-    items.map(([k, t, n]) => h('button', {
+    items.map(([k, t, n, icon]) => h('button', {
       key: k, role: 'tab', 'aria-selected': value === k ? 'true' : 'false',
       className: 'tab' + (value === k ? ' is-active' : ''), onClick: () => onChange(k)
-    }, t, n != null ? h('span', { className: 'tab-n' }, n) : null))
+    }, icon ? h(Icon, { name: icon, size: 13, cls: 'tab-ico' }) : null, t, n != null ? h('span', { className: 'tab-n' }, n) : null))
   );
 }
 
@@ -194,7 +195,8 @@ export function ItemHead({ item, points = [] }) {
           : 'на доске сейчас никто не продаёт'),
       h('div', { className: 'card-links' },
         h(CopyLink, { name: item.item_name }),
-        item.Url ? h('a', { className: 'link', href: item.Url, target: '_blank', rel: 'noreferrer noopener' }, 'Открыть на SO-Wiki') : null)
+        item.Url ? h('a', { className: 'link link-btn', href: item.Url, target: '_blank', rel: 'noreferrer noopener' },
+          h(Icon, { name: 'external', size: 13, cls: 'ico' }), 'Открыть на SO-Wiki') : null)
     )
   );
 }
@@ -223,5 +225,52 @@ export function CalcRow({ it, onQty, onRemove }) {
     ),
     h('button', { className: 'calc-del', title: 'Убрать', 'aria-label': 'Убрать из калькулятора', onClick: onRemove },
       h(Icon, { name: 'close', size: 12, cls: 'ico' }))
+  );
+}
+
+/** Иконки категорий (ключи из data/meta.json) */
+export const GROUP_ICON = { all: 'cells', weapons: 'rifle', mods: 'scope', ammo: 'bullet', grenades: 'grenade',
+  equip: 'vest', med: 'medkit', arts: 'crystal', troph: 'paw', items: 'box' };
+
+/** Список категорий с иконками (обычный <select> не показывает картинки в пунктах) */
+export function CatSelect({ options, value, onChange }) {
+  const h = React.createElement;
+  const { useState, useEffect, useRef } = React;
+  const [open, setOpen] = useState(false);
+  const [hi, setHi] = useState(0);
+  const ref = useRef(null);
+  const cur = options.find(o => o.key === value) || options[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const off = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', off);
+    return () => document.removeEventListener('mousedown', off);
+  }, [open]);
+  useEffect(() => { if (open) setHi(Math.max(0, options.findIndex(o => o.key === value))); }, [open]);
+
+  const pick = (k) => { onChange(k); setOpen(false); ref.current && ref.current.querySelector('.cat-btn').focus(); };
+  const key = (e) => {
+    if (e.key === 'Escape') { setOpen(false); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!open) { setOpen(true); return; }
+      setHi(i => (i + (e.key === 'ArrowDown' ? 1 : options.length - 1)) % options.length);
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && open) { e.preventDefault(); pick(options[hi].key); }
+  };
+  const item = (o) => [h(Icon, { key: 'i', name: GROUP_ICON[o.key] || 'box', size: 15, cls: 'cat-ico' }),
+    h('span', { key: 't', className: 'cat-t' }, o.label), h('span', { key: 'n', className: 'cat-n' }, o.count)];
+
+  return h('div', { className: 'cat' + (open ? ' is-open' : ''), ref, onKeyDown: key },
+    h('button', { className: 'cat-btn', 'aria-haspopup': 'listbox', 'aria-expanded': open ? 'true' : 'false',
+      'aria-label': 'Категория: ' + cur.label, onClick: () => setOpen(o => !o) },
+      item(cur), h(Icon, { name: 'chevron', size: 11, cls: 'cat-chev' })),
+    open ? h('ul', { className: 'cat-list', role: 'listbox', 'aria-label': 'Категория' },
+      options.map((o, i) => h('li', {
+        key: o.key, role: 'option', 'aria-selected': o.key === value ? 'true' : 'false',
+        className: 'cat-opt' + (i === hi ? ' is-hi' : '') + (o.key === value ? ' is-cur' : ''),
+        onMouseEnter: () => setHi(i), onClick: () => pick(o.key)
+      }, item(o)))) : null
   );
 }

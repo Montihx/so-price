@@ -90,7 +90,7 @@ export function PriceHistory({ points }) {
   const ch = changeOf(points);
   return h('div', { className: 'hist' },
     h('div', { className: 'hist-head' },
-      h('span', { className: 'src-head' }, 'История цены'),
+      h('span', { className: 'src-head' }, h(Icon, { name: 'chart', size: 13, cls: 'head-ico' }), 'История цены'),
       ch ? h('span', { className: 'hist-delta' },
         ch.pct === 0 ? 'без изменений' : h(React.Fragment, null,
           h(Icon, { name: 'chevron', size: 11, cls: 'hist-arrow ' + (ch.pct > 0 ? 'up' : 'down') }),
