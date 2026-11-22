@@ -1,11 +1,13 @@
 /* global React, ReactDOM */
 import {
-  priceStr, norm, isAscii, latinToCyrillic,
-  escapeRegExp, resolveIconPath, useDebounced, getIconCandidates
+  norm, isAscii, latinToCyrillic,
+  escapeRegExp, resolveIconPath, useDebounced
 } from './utils.js';
+import { SourcesBlock, Icon } from './sources.js';
+import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPrice, Window, Tabs, ItemHead, CalcRow } from './board.js';
 
 (function () {
-  const { useEffect, useMemo, useState, useCallback, useRef } = React;
+  const { useEffect, useMemo, useState, useCallback } = React;
   const DATA_URL = './data/data.json'; // URL для загрузки данных каталога
 
   /* Компонент подсветки совпадений в результатах поиска */
@@ -28,63 +30,6 @@ import {
     );
   }
 
-  /* Компонент строки таблицы товаров */
-  const Row = React.memo(function Row({ r, indexLabel, isSelected, onSelect, onAdd, qDeb }) {
-    // Получение кандидатов путей для иконок (fallback при 404)
-    const candidates = getIconCandidates(r.icon_local_path);
-    
-    // Обработчик ошибок загрузки иконки - перебор кандидатов
-    const onErr = (e)=>{
-      const el = e.currentTarget;
-      let i = Number(el.dataset.fidx || 0);
-      if(i < candidates.length-1){ 
-        i+=1; 
-        el.dataset.fidx=String(i); 
-        el.src=candidates[i]; // Пробуем следующий кандидат
-      }
-      else{ 
-        el.classList.add('error'); 
-        el.removeAttribute('src'); // Все кандидаты исчерпаны
-      }
-    };
-    
-    return React.createElement('tr', {
-      'data-row-id': r.item_id || r._i,
-      className: 'table-row' + (isSelected ? ' is-selected' : ''),
-      onClick: onSelect
-    },
-
-      // Колонка с иконкой товара
-      React.createElement('td', { className: 'cell icon-cell hide-xs' },
-        candidates.length
-          ? React.createElement('img', {
-              src: candidates[0], alt: '', className: 'avatar',
-              width: 36, height: 36, decoding: 'async', loading: 'lazy', fetchpriority: 'low',
-              'data-fidx':'0', onError:onErr
-            })
-          : React.createElement('div', { className: 'avatar placeholder' })
-      ),
-      
-      // Колонка с названием товара и подсветкой поиска
-      React.createElement('td', { className: 'cell name-cell' },
-        React.createElement('span', { className: 'clamp-2 table-text', title: r.item_name },
-          React.createElement(Highlight, { text: r.item_name, query: qDeb })
-        )
-      ),
-      
-      // Колонка с ценой
-      React.createElement('td', { className: 'cell num-cell' }, priceStr(r.price)),
-      
-      // Колонка с кнопкой добавления в корзину
-      React.createElement('td', { className: 'cell num-cell right' },
-        React.createElement('button', {
-          className: 'icon-btn icon-btn--xs pressable ripple',
-          onClick: (e) => { e.stopPropagation(); onAdd(); }, title: 'Добавить'
-        }, '+')
-      )
-    );
-  });
-
   /* Главный компонент приложения */
   function App() {
     // Состояния приложения
@@ -98,7 +43,11 @@ import {
     });
     const [loading, setLoading] = useState(false); // Статус загрузки
     const [error, setError] = useState(''); // Сообщения об ошибках
-    const [limit, setLimit] = useState(window.innerWidth < 768 ? 25 : 50); // Лимит отображаемых товаров
+    const [sort, setSort] = useState({ key: 'name', dir: 1 }); // сортировка по заголовкам, как на доске
+    const [page, setPage] = useState(0);                       // текущая страница
+    const [avail, setAvail] = useState('all');                 // вкладка: все / есть на доске / нет объявлений
+    const [view, setView] = useState(() => { try { return localStorage.getItem('view') === 'grid' ? 'grid' : 'list'; } catch { return 'list'; } });
+    useEffect(() => { try { localStorage.setItem('view', view); } catch {} }, [view]);
     
     const qDeb = useDebounced(query, 200); // Дебаунс поискового запроса
 
@@ -150,9 +99,58 @@ import {
       );
     }, [data, qDeb]);
 
-    const visible = filtered.slice(0, limit); // Видимые товары с учетом лимита
-    const cartItems = Object.values(cart); // Товары в корзине
-    const total = cartItems.reduce((s, i) => s + (Number(i.price)||0) * (Number(i.qty)||0), 0); // Общая сумма
+    /* Сортировка: «Наименование» / «Стоимость» (0 = нет объявлений — всегда в конце) */
+    const counts = useMemo(() => {
+      let listed = 0; for (const x of filtered) if (Number(x.price) > 0) listed++;
+      return { all: filtered.length, listed, none: filtered.length - listed };
+    }, [filtered]);
+
+    const sorted = useMemo(() => {
+      const arr = avail === 'all' ? filtered.slice()
+        : filtered.filter(x => (Number(x.price) > 0) === (avail === 'listed'));
+      const coll = new Intl.Collator('ru');
+      if (sort.key === 'price') {
+        arr.sort((a, b) => {
+          const pa = Number(a.price) || 0, pb = Number(b.price) || 0;
+          if (!pa !== !pb) return pa ? -1 : 1;
+          return (pa - pb) * sort.dir || coll.compare(a.item_name, b.item_name);
+        });
+      } else {
+        arr.sort((a, b) => coll.compare(String(a.item_name).replace(/^["«]/, ''), String(b.item_name).replace(/^["«]/, '')) * sort.dir);
+      }
+      return arr;
+    }, [filtered, sort, avail]);
+    // сетка: на странице целое число рядов (столбцов столько, сколько влезает по ширине окна)
+    const [cols, setCols] = useState(10);
+    useEffect(() => {
+      const el = document.querySelector('.list-win .win-body');
+      if (!el || typeof ResizeObserver === 'undefined') return;
+      const min = () => (window.matchMedia('(max-width: 480px)').matches ? 56 : 64); // как minmax() в .cells
+      const upd = () => {
+        const cs = getComputedStyle(el);
+        const w = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2;
+        setCols(Math.max(1, Math.floor(w / min())));
+      };
+      const ro = new ResizeObserver(upd); ro.observe(el); upd();
+      return () => ro.disconnect();
+    }, [loading]);
+    const per = view === 'grid' ? cols * Math.max(3, Math.ceil(GRID_PAGE_SIZE / cols)) : PAGE_SIZE;
+    // ширина изменилась -> остаёмся на тех же предметах, а не на том же номере страницы
+    const prevPer = React.useRef(per);
+    useEffect(() => {
+      if (prevPer.current !== per) { setPage(p => Math.floor(p * prevPer.current / per)); prevPer.current = per; }
+    }, [per]);
+    const pages = Math.max(1, Math.ceil(sorted.length / per));
+    useEffect(() => { setPage(0); }, [qDeb, sort, avail, view]);
+    const curPage = Math.min(page, pages - 1);
+    const visible = sorted.slice(curPage * per, curPage * per + per);
+    // Товары в корзине: цена берётся из актуальных данных (в localStorage мог остаться старый снимок)
+    const byId = useMemo(() => { const m = {}; for (const x of data) m[x.item_id || x._i] = x; return m; }, [data]);
+    const cartItems = Object.values(cart).map(it => {
+      const cur = byId[it.item_id || it._i];
+      return cur ? { ...it, price: cur.price, price_updated: cur.price_updated, icon_local_path: cur.icon_local_path, stale: false } : { ...it, stale: data.length > 0 };
+    });
+    const total = cartItems.reduce((s, i) => s + (i.stale ? 0 : (Number(i.price)||0) * (Number(i.qty)||0)), 0); // Общая сумма
 
     /* Добавление товара в корзину */
     const addToCart = useCallback((item, qty = 1) => {
@@ -186,133 +184,102 @@ import {
       } catch {} 
     }, [cart]);
 
-    /* Автопрокрутка к выбранному элементу таблицы */
-    const tableRef = useRef(null);
-    const selectedIndex = filtered.findIndex(x => 
-      (x.item_id || x._i) === (selected?.item_id || selected?._i)
-    );
-    
-    useEffect(() => {
-      if (selectedIndex < 0 || !tableRef.current) return;
-      const id = (filtered[selectedIndex].item_id || filtered[selectedIndex]._i);
-      const row = tableRef.current.querySelector('[data-row-id="' + id + '"]');
-      if (row) row.scrollIntoView({ block: 'nearest' });
-    }, [selectedIndex, filtered]);
-
-
-    /* Шапка */
-    const header = React.createElement('header', { className: 'layout-header' },
-      React.createElement('h1', null, 'SO-Wiki: ЗОНА'),
-      React.createElement('button', { className: 'btn btn--outline pressable ripple', onClick: loadData, disabled: loading }, loading ? 'Загрузка…' : 'Обновить')
+    /* Шапка как в меню игры: «STAY OUT / ЦЕНЫ ДОСКИ», справа поиск */
+    const h = React.createElement;
+    const header = h('header', { className: 'top' },
+      h('h1', { className: 'crumb' },
+        h('span', { className: 'crumb-root' }, 'Stay Out'),
+        h('span', { className: 'crumb-cur' }, ' / Цены доски')),
+      h('div', { className: 'top-tools' },
+        h('label', { className: 'search' },
+          h(Icon, { name: 'search', size: 16, cls: 'search-ico' }),
+          h('input', { className: 'field search-input', type: 'search', placeholder: 'Название предмета', value: query,
+            onChange: (e) => setQuery(e.target.value), 'aria-label': 'Поиск по названию' })),
+        h('button', { className: 'btn btn-icon', onClick: loadData, disabled: loading,
+          title: 'Обновить данные', 'aria-label': 'Обновить данные' },
+          h(Icon, { name: 'refresh', size: 16, cls: 'ico' + (loading ? ' spin' : '') })))
     );
 
-    /* Поиск */
-    const search = React.createElement('div', { className: 'search-bar' },
-      React.createElement('input', { className: 'input input--terminal', type: 'text', placeholder: 'Поиск по названию…', value: query, onChange: (e) => setQuery(e.target.value) })
+    const isSel = (r) => !!selected && (r.item_id || r._i) === (selected.item_id || selected._i);
+    const onSelect = (r) => () => {
+      setSelected(r);
+      // на узком экране карточка ниже списка — прокручиваем к ней
+      if (window.innerWidth < 900) setTimeout(() => {
+        const el = document.querySelector('.selection-card');
+        if (el) el.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      }, 60);
+    };
+
+    /* Окно «Предметы»: вкладки наличия, сортировка, вид, строки или ячейки, страницы */
+    const viewBtn = (v, icon, label) => h('button', {
+      className: 'tool' + (view === v ? ' is-active' : ''), onClick: () => setView(v),
+      title: label, 'aria-label': label, 'aria-pressed': view === v ? 'true' : 'false'
+    }, h(Icon, { name: icon, size: 15, cls: 'ico' }));
+
+    const body = loading
+      ? h('div', { className: 'empty' }, 'Загрузка…')
+      : visible.length === 0
+        ? h('div', { className: 'empty' }, qDeb ? 'По запросу «' + qDeb + '» ничего не найдено' : 'В этой вкладке пока пусто')
+        : view === 'grid'
+          ? h('div', { className: 'cells', style: { gridTemplateColumns: 'repeat(' + cols + ', minmax(0, 1fr))' } },
+              visible.map(r => h(GridCell, {
+                key: r.item_id || r._i, r, selected: isSel(r), onSelect: onSelect(r), onAdd: () => addToCart(r, 1) })),
+              // неполный последний ряд добиваем пустыми ячейками, как пустые слоты инвентаря
+              Array.from({ length: (cols - visible.length % cols) % cols }, (_, i) =>
+                h('div', { key: 'e' + i, className: 'cell is-void', 'aria-hidden': 'true' }, h('div', { className: 'slot' }))))
+          : h('div', { className: 'rows' }, visible.map(r => h(BoardRow, {
+              key: r.item_id || r._i, r, query: qDeb, Highlight, selected: isSel(r),
+              onSelect: onSelect(r), onAdd: () => addToCart(r, 1) })));
+
+    const table = h(Window, {
+      title: 'Предметы', icon: 'cube', className: 'list-win grid-left',
+      tools: [viewBtn('list', 'rows', 'Списком'), viewBtn('grid', 'cells', 'Сеткой, как инвентарь')],
+      tabs: h(Tabs, { label: 'Наличие на доске', value: avail, onChange: setAvail, items: [
+        ['all', 'Все', counts.all], ['listed', 'Есть на доске', counts.listed], ['none', 'Нет объявлений', counts.none]] }),
+      foot: [
+        h('span', { key: 'n', className: 'foot-stat' }, h(Icon, { name: 'cube', size: 13, cls: 'ico' }), ' ' + sorted.length + ' предм.'),
+        h(Pager, { key: 'p', page: curPage, pages, setPage })]
+    },
+      h('div', { className: 'sortbar' },
+        h('span', { className: 'sortbar-lbl' }, 'Сортировка:'),
+        h(SortHead, { label: 'Название', k: 'name', sort, setSort }),
+        h(SortHead, { label: 'Цена', k: 'price', sort, setSort })),
+      body
     );
 
-    /* Таблица */
-    const table = React.createElement('div', { className: 'table-wrap grid-left' },
-      React.createElement('table', { className: 'table table--hover table--catalog elevate', ref: tableRef, 'data-empty': (!loading && visible.length === 0) ? '1' : '0' },
-        React.createElement('thead', null, React.createElement('tr', null,
-          React.createElement('th', { className: 'col-icon hide-xs' }, 'Иконка'),
-          React.createElement('th', { className: 'col-name' }, 'Название'),
-          React.createElement('th', { className: 'col-price num-cell' }, 'Цена'),
-          React.createElement('th', { className: 'col-action num-cell' }, 'Добавить'),
-
-        )),
-        React.createElement('tbody', null,
-          loading
-            ? React.createElement('tr', null, React.createElement('td', { colSpan: 5, className: 'cell center muted' }, 'Загрузка…'))
-            : (visible.length === 0
-              ? React.createElement('tr', null, React.createElement('td', { colSpan: 5, className: 'cell center muted' }, 'Нет результатов.'))
-              : visible.map((r, i) => {
-                  const isSel = selected && (r.item_id || r._i) === (selected.item_id || selected._i);
-                  return React.createElement(Row, { key: r.item_id || r._i, r, indexLabel: String(i + 1), isSelected: isSel, onSelect: () => setSelected(r), onAdd: () => addToCart(r, 1), qDeb });
-                })
-            )
-        )
-      ),
-      (filtered.length > limit) && React.createElement('div', { className: 'show-more' },
-        React.createElement('button', {
-          className: 'btn btn--outline pressable ripple',
-          onClick: () => setLimit(l => l + (window.innerWidth < 768 ? 25 : 50))
-        }, 'Показать ещё ', String(window.innerWidth < 768 ? 25 : 50), ' (осталось ', String(Math.max(0, filtered.length - limit - (window.innerWidth < 768 ? 25 : 50))), ')')
-      )
-    );
-
-    /* Правая панель: карточка + калькулятор */
-    const selectionCard = React.createElement('div', { className: 'panel-box selection-card fade-in' },
+    /* Правая панель: окно предмета и калькулятор */
+    const idOf = (x) => x.item_id || x._i;
+    const selectionCard = h(Window, { title: selected ? 'Предмет' : 'Предмет не выбран', className: 'selection-card' },
       selected
-        ? React.createElement('div', { className: 'selection', style:{display:'flex',gap:'.75rem',alignItems:'center'} },
-            (() => {
-              const cs = getIconCandidates(selected.icon_local_path);
-              const onErr = (e) => {
-                const el = e.currentTarget; let i = Number(el.dataset.fidx || 0);
-                if (i < cs.length - 1) { i += 1; el.dataset.fidx = String(i); el.src = cs[i]; }
-                else { el.classList.add('error'); el.removeAttribute('src'); }
-              };
-              return cs.length
-                ? React.createElement('img', { src: cs[0], alt: '', className: 'avatar-lg', width:48, height:48, decoding:'async', loading:'lazy', fetchpriority:'low', 'data-fidx':'0', onError:onErr })
-                : React.createElement('div', { className: 'avatar-lg placeholder' });
-            })(),
-            React.createElement('div', { className: 'selection-info', style:{display:'grid',gap:'.35rem',alignContent:'start'} },
-              React.createElement('div', { className: 'selection-title clamp-2', title: selected.item_name }, selected.item_name || 'Без названия'),
-              React.createElement('div', { className: 'selection-meta muted' }, 'ID: ', selected.item_id || '—'),
-              selected.Url && React.createElement('div', null,
-                React.createElement('a', { className: 'btn btn--outline btn--sm ripple', href: selected.Url, target: '_blank', rel: 'noreferrer noopener' }, 'Подробнее на SO-Wiki')
-              )
-            )
-          )
-        : React.createElement('div', { className: 'muted' }, 'Выберите позицию в таблице')
+        ? h(React.Fragment, null,
+            h(ItemHead, { item: selected }),
+            h(SourcesBlock, { item: selected, key: idOf(selected) }))
+        : h('div', { className: 'win-empty' }, 'Выберите предмет в списке: здесь появятся цена и где его взять.')
     );
 
-    const calc = React.createElement('div', { className: 'calc calc--compact elevate' },
-      React.createElement('div', { className: 'calc-head' },
-        React.createElement('h3', null, 'Калькулятор'),
-        React.createElement('div', { className: 'text-sm muted' }, String(cartItems.length), ' поз.')
-      ),
+    const calc = h(Window, {
+      title: 'Калькулятор', className: 'calc',
+      tools: cartItems.length ? h('span', { className: 'win-count' }, String(cartItems.length)) : null,
+      foot: cartItems.length > 0 ? [
+        h('div', { key: 't', className: 'money', title: 'Сумма по минимальным ценам' },
+          h(Icon, { name: 'wallet', size: 15, cls: 'ico' }), ' ' + boardPrice(total)),
+        h('button', { key: 'c', className: 'btn', onClick: clearCart }, 'Очистить')] : null
+    },
       cartItems.length === 0
-        ? React.createElement('p', { className: 'text-sm muted' }, 'Нажмите «+» в строке, чтобы добавить.')
-        : cartItems.map(it =>
-            React.createElement('div', { key: it.item_id || it._i, className: 'calc-row' },
-              (() => {
-                const cs = getIconCandidates(it.icon_local_path);
-                const onErr = (e) => { const el = e.currentTarget; let i = Number(el.dataset.fidx || 0);
-                  if (i < cs.length - 1) { i += 1; el.dataset.fidx = String(i); el.src = cs[i]; }
-                  else { el.classList.add('error'); el.removeAttribute('src'); }
-                };
-                return cs.length
-                  ? React.createElement('img', { src: cs[0], alt: '', className: 'calc-thumb', width:28, height:28, decoding:'async', loading:'lazy', fetchpriority:'low', 'data-fidx':'0', onError:onErr })
-                  : React.createElement('div', { className: 'calc-thumb placeholder' });
-              })(),
-              React.createElement('div', { className: 'calc-main' },
-                React.createElement('div', { className: 'calc-title clamp-2', title: it.item_name }, it.item_name),
-                React.createElement('div', { className: 'calc-price muted' }, priceStr(it.price))
-              ),
-              React.createElement('div', { className: 'qty-group' },
-                React.createElement('button', { className: 'qty-btn pressable ripple', title: 'Уменьшить',
-                  onClick: () => setCart(c => ({ ...c, [it.item_id || it._i]: { ...it, qty: Math.max(1, (it.qty || 1) - 1) } })) }, '−'),
-                React.createElement('input', { type: 'number', value: it.qty, min: 1,
-                  onChange: (e) => setCart(c => ({ ...c, [it.item_id || it._i]: { ...it, qty: Math.max(1, +e.target.value || 1) } })) }),
-                React.createElement('button', { className: 'qty-btn pressable ripple', title: 'Увеличить',
-                  onClick: () => setCart(c => ({ ...c, [it.item_id || it._i]: { ...it, qty: (it.qty || 0) + 1 } })) }, '+')
-              )
-            )
-          ),
-      cartItems.length > 0 &&
-        React.createElement('div', { className: 'calc-footer' },
-          React.createElement('div', { className: 'total' }, 'Итого: ', priceStr(total)),
-          React.createElement('button', { className: 'btn btn--outline pressable ripple', onClick: clearCart }, 'Очистить')
-        )
+        ? h('div', { className: 'win-empty' }, 'Нажмите «+» в строке предмета, чтобы посчитать сумму.')
+        : h('div', { className: 'calc-list' }, cartItems.map(it => h(CalcRow, {
+            key: idOf(it), it,
+            onQty: (q) => setCart(c => ({ ...c, [idOf(it)]: { ...it, qty: q } })),
+            onRemove: () => setCart(c => { const n = { ...c }; delete n[idOf(it)]; return n; })
+          })))
     );
 
-    const panel = React.createElement('aside', { className: 'side-panel grid-right' }, selectionCard, calc);
+    const panel = h('aside', { className: 'side-panel grid-right' }, selectionCard, calc);
 
-    return React.createElement('div', { className: 'app-container theme-stalker' },
-      header, search,
-      error && React.createElement('div', { className: 'alert show' }, error),
-      React.createElement('section', { className: 'grid-main' }, table, panel)
+    return h('div', { className: 'app' },
+      header,
+      error && h('div', { className: 'alert show' }, error),
+      h('main', { className: 'grid-main' }, table, panel)
     );
   }
 

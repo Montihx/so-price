@@ -20,8 +20,11 @@
 const fmt = new Intl.NumberFormat('ru-RU');
 export const priceStr = (v) => fmt.format(Number(v||0));
 
+/** Цена для показа: 0 = объявлений на доске не было -> «—» */
+export const priceShow = (v) => (Number(v) > 0 ? fmt.format(Number(v)) : '—');
+
 /** Утилиты нормализации текста для поиска */
-export const norm = (s) => String(s ?? '').trim().toLowerCase(); // Приведение к нижнему регистру и обрезка пробелов
+export const norm = (s) => String(s ?? '').trim().toLowerCase().replace(/ё/g, 'е'); // нижний регистр, ё→е, обрезка пробелов
 
 /** Проверка, содержит ли строка только ASCII-символы */
 export const isAscii = (s) => /^[\x00-\x7F]*$/.test(String(s ?? ''));
@@ -70,6 +73,7 @@ export function resolveIconPath(p){
 /** Генерация списка кандидатов путей для загрузки иконок (fallback при 404) */
 export function getIconCandidates(p){
   const first = resolveIconPath(p);
+  if(!first) return []; // нет пути — заглушка без лишних запросов
   const out = []; 
   const seen = new Set(); 
   const add = x => { if(x && !seen.has(x)){ seen.add(x); out.push(x); } };
