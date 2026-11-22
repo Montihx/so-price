@@ -163,6 +163,20 @@ export function Tabs({ items, value, onChange, label }) {
   );
 }
 
+/** «Скопировать ссылку» на предмет (…/#название) */
+function CopyLink({ name }) {
+  const h = React.createElement;
+  const [done, setDone] = React.useState(false);
+  const url = location.origin + location.pathname + '#' + encodeURIComponent(name);
+  const copy = () => {
+    const ok = () => { setDone(true); setTimeout(() => setDone(false), 1600); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(ok, () => prompt('Ссылка на предмет:', url));
+    else prompt('Ссылка на предмет:', url);
+  };
+  return h('button', { className: 'link link-btn', onClick: copy, title: url, 'aria-live': 'polite' },
+    h(Icon, { name: done ? 'check' : 'link', size: 13, cls: 'ico' }), done ? 'Ссылка скопирована' : 'Скопировать ссылку');
+}
+
 /** Шапка карточки: иконка на оливковом свечении (как силуэт в окне снаряжения), название, цена */
 export function ItemHead({ item, points = [] }) {
   const h = React.createElement;
@@ -178,7 +192,9 @@ export function ItemHead({ item, points = [] }) {
           : last ? h(React.Fragment, null, 'на доске сейчас никто не продаёт; последняя цена ',
               h('b', { className: priceTone(last[1]) }, boardPrice(last[1])), ', ' + fmtDate(last[0]))
           : 'на доске сейчас никто не продаёт'),
-      item.Url ? h('a', { className: 'link', href: item.Url, target: '_blank', rel: 'noreferrer noopener' }, 'Открыть на SO-Wiki') : null
+      h('div', { className: 'card-links' },
+        h(CopyLink, { name: item.item_name }),
+        item.Url ? h('a', { className: 'link', href: item.Url, target: '_blank', rel: 'noreferrer noopener' }, 'Открыть на SO-Wiki') : null)
     )
   );
 }

@@ -3,7 +3,7 @@ import {
   norm, isAscii, latinToCyrillic,
   escapeRegExp, resolveIconPath, useDebounced
 } from './utils.js';
-import { SourcesBlock, Icon, loadSources } from './sources.js';
+import { SourcesBlock, Icon, loadSource, loadMeta } from './sources.js';
 import { loadHistory, pointsOf, PriceHistory } from './history.js';
 import { bestSale } from './trade.js';
 import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPrice, Window, Tabs, ItemHead, CalcRow } from './board.js';
@@ -54,7 +54,10 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
     const qDeb = useDebounced(query, 200);
     const [hist, setHist] = useState(null);                    // история цен (data/history.json)
     useEffect(() => { loadHistory().then(setHist); }, []);
-    const [srcs, setSrcs] = useState(null);                    // сведения для «доска или NPC» в калькуляторе // Дебаунс поискового запроса
+    const [srcs, setSrcs] = useState({});                      // сведения предметов калькулятора: { item_id: rec|null }
+    const [meta, setMeta] = useState({ groups: [], g: {} });   // категории (data/meta.json)
+    useEffect(() => { loadMeta().then(setMeta); }, []);
+    const [cat, setCat] = useState('all');                     // выбранная категория // Дебаунс поискового запроса
 
     /* Загрузка данных каталога с сервера */
     const loadData = useCallback(async () => {
@@ -92,17 +95,35 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
     // Загрузка данных при монтировании компонента
     useEffect(() => { loadData(); }, [loadData]);
 
+    // ссылка на предмет: …/#АК-103 открывает его карточку
+    useEffect(() => {
+      if (!data.length) return;
+      const open = () => {
+        const name = decodeURIComponent(location.hash.slice(1));
+        if (!name) return;
+        const it = data.find(x => x.item_name === name) || data.find(x => norm(x.item_name) === norm(name));
+        if (!it) return;
+        setSelected(it);
+        if (window.innerWidth < 900) setTimeout(() => {
+          const el = document.querySelector('.selection-card'); if (el) el.scrollIntoView({ block: 'start' });
+        }, 100);
+      };
+      open();
+      window.addEventListener('hashchange', open);
+      return () => window.removeEventListener('hashchange', open);
+    }, [data]);
+    useEffect(() => { document.title = selected ? selected.item_name + ' — SO-Price' : 'SO-Price'; }, [selected]);
+
     /* Фильтрация данных по поисковому запросу */
     const filtered = useMemo(() => {
-      const q = norm(qDeb); 
-      if (!q) return data; // Если запрос пустой - возвращаем все данные
-      
-      // Поиск по нормализованному названию и кириллической транслитерации
-      return data.filter(x => 
-        norm(x.item_name).includes(q) || 
-        norm(latinToCyrillic(x.item_name)).includes(q)
+      const q = norm(qDeb);
+      const gi = cat === 'all' ? -1 : meta.groups.findIndex(g => g[0] === cat);
+      // поиск по нормализованному названию и кириллической транслитерации; категория
+      return data.filter(x =>
+        (gi < 0 || meta.g[x.item_id] === gi) &&
+        (!q || norm(x.item_name).includes(q) || norm(latinToCyrillic(x.item_name)).includes(q))
       );
-    }, [data, qDeb]);
+    }, [data, qDeb, cat, meta]);
 
     /* Сортировка: «Наименование» / «Стоимость» (0 = нет объявлений — всегда в конце) */
     const counts = useMemo(() => {
@@ -146,7 +167,7 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
       if (prevPer.current !== per) { setPage(p => Math.floor(p * prevPer.current / per)); prevPer.current = per; }
     }, [per]);
     const pages = Math.max(1, Math.ceil(sorted.length / per));
-    useEffect(() => { setPage(0); }, [qDeb, sort, avail, view]);
+    useEffect(() => { setPage(0); }, [qDeb, sort, avail, view, cat]);
     const curPage = Math.min(page, pages - 1);
     const visible = sorted.slice(curPage * per, curPage * per + per);
     // Товары в корзине: цена берётся из актуальных данных (в localStorage мог остаться старый снимок)
@@ -157,13 +178,18 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
     });
     const total = cartItems.reduce((s, i) => s + (i.stale ? 0 : (Number(i.price)||0) * (Number(i.qty)||0)), 0); // Общая сумма
     // «доска или NPC»: сведения грузим, только когда в калькуляторе что-то есть
-    useEffect(() => { if (cartItems.length && !srcs) loadSources().then(setSrcs).catch(() => {}); }, [cartItems.length, srcs]);
+    const cartKey = cartItems.map(i => i.item_id).join('|');
+    useEffect(() => {
+      for (const i of cartItems) {
+        if (!i.item_id || i.item_id in srcs) continue;
+        loadSource(i.item_id).then(rec => setSrcs(m => ({ ...m, [i.item_id]: rec }))).catch(() => {});
+      }
+    }, [cartKey]);
     const sale = useMemo(() => {
-      if (!srcs) return null;
       let best = 0, npcCount = 0, any = false;
       for (const i of cartItems) {
         if (i.stale) continue;
-        const b = bestSale(i.price, srcs.items && srcs.items[i.item_id]);
+        const b = bestSale(i.price, srcs[i.item_id]);
         if (b.npc) any = true;
         if (b.where === 'npc') npcCount++;
         best += b.best * (Number(i.qty) || 0);
@@ -222,6 +248,7 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
     const isSel = (r) => !!selected && (r.item_id || r._i) === (selected.item_id || selected._i);
     const onSelect = (r) => () => {
       setSelected(r);
+      try { history.replaceState(null, '', '#' + encodeURIComponent(r.item_name)); } catch {}
       // на узком экране карточка ниже списка — прокручиваем к ней
       if (window.innerWidth < 900) setTimeout(() => {
         const el = document.querySelector('.selection-card');
@@ -262,7 +289,15 @@ import { BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SIZE, boardPr
       h('div', { className: 'sortbar' },
         h('span', { className: 'sortbar-lbl' }, 'Сортировка:'),
         h(SortHead, { label: 'Название', k: 'name', sort, setSort }),
-        h(SortHead, { label: 'Цена', k: 'price', sort, setSort })),
+        h(SortHead, { label: 'Цена', k: 'price', sort, setSort }),
+        meta.groups.length ? h('label', { className: 'catsel' },
+          h('span', { className: 'sortbar-lbl' }, 'Категория:'),
+          h('select', { className: 'field catsel-input', value: cat, onChange: (e) => setCat(e.target.value), 'aria-label': 'Категория' },
+            h('option', { value: 'all' }, 'Все'),
+            meta.groups.map(([k, t], i) => {
+              let n = 0; for (const x of data) if (meta.g[x.item_id] === i) n++;
+              return h('option', { key: k, value: k }, t + ' (' + n + ')');
+            }))) : null),
       body
     );
 

@@ -4,7 +4,8 @@
 
 import { TradeBlock } from './trade.js';
 
-const SOURCES_URL = './data/sources.json';
+const SRC_DIR = './data/src/';
+const META_URL = './data/meta.json';
 const WIKI = 'https://so-wiki.ru/wiki/';
 const SHOW = 10; // сколько пунктов показывать до «ещё N»
 
@@ -44,6 +45,8 @@ const ICONS = {
   spark:  [['path', { d: 'M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8' }],
            ['circle', { cx: 12, cy: 12, r: 2 }]],
   bullet: [['path', { d: 'M10 21V10c0-3 1-5.5 2-7 1 1.5 2 4 2 7v11z' }], ['path', { d: 'M10 17h4' }]],
+  link:   [['path', { d: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1' }], ['path', { d: 'M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1' }]],
+  check:  [['path', { d: 'M5 12.5l4.5 4.5L19 7.5' }]],
   wallet: [['path', { d: 'M3 7h16a2 2 0 0 1 2 2v9H3z' }], ['path', { d: 'M3 7l12-3v3' }], ['path', { d: 'M16 13h2' }]],
 };
 
@@ -88,15 +91,26 @@ const GET_ORDER = [
   { t: 'Выдается в награду за PvP сезон', icon: 'trophy', hint: '' },
 ];
 
-let cache = null;
-/** Загрузка sources.json один раз за сеанс */
-export function loadSources() {
-  if (!cache) {
-    cache = fetch(SOURCES_URL, { cache: 'no-cache' })
-      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .catch(e => { cache = null; throw e; });
+const srcCache = new Map();
+/** Сведения одного предмета: data/src/<item_id>.json (null — сведений нет). Кэш на сеанс. */
+export function loadSource(id) {
+  if (!srcCache.has(id)) {
+    srcCache.set(id, fetch(SRC_DIR + encodeURIComponent(id) + '.json')
+      .then(r => (r.ok ? r.json() : (r.status === 404 ? null : Promise.reject(new Error('HTTP ' + r.status)))))
+      .catch(e => { srcCache.delete(id); throw e; }));
   }
-  return cache;
+  return srcCache.get(id);
+}
+
+let metaCache = null;
+/** Категории и дата сведений: data/meta.json */
+export function loadMeta() {
+  if (!metaCache) {
+    metaCache = fetch(META_URL, { cache: 'no-cache' })
+      .then(r => (r.ok ? r.json() : { groups: [], g: {} }))
+      .catch(() => ({ groups: [], g: {} }));
+  }
+  return metaCache;
 }
 
 /** Ссылка на страницу вики по названию (как MediaWiki: пробелы -> «_») */
@@ -146,8 +160,9 @@ export function SourcesBlock({ item }) {
   useEffect(() => {
     let alive = true;
     setOpen({});
-    loadSources()
-      .then(d => alive && setState({ loading: false, data: d, error: '' }))
+    setState({ loading: true, data: null, error: '' });
+    Promise.all([loadSource(item.item_id), loadMeta()])
+      .then(([rec, meta]) => alive && setState({ loading: false, data: { rec, updated: meta.src_updated }, error: '' }))
       .catch(e => alive && setState({ loading: false, data: null, error: e.message || String(e) }));
     return () => { alive = false; };
   }, [item && item.item_id]);
@@ -155,7 +170,7 @@ export function SourcesBlock({ item }) {
   if (state.loading) return h('div', { className: 'src muted' }, 'Загрузка сведений…');
   if (state.error) return h('div', { className: 'src muted' }, 'Сведения о получении недоступны (' + state.error + ')');
 
-  const rec = state.data && state.data.items && state.data.items[item.item_id];
+  const rec = state.data && state.data.rec;
   if (!rec) return h('div', { className: 'src muted' }, 'На SO-Wiki нет сведений о получении.');
 
   const info = rec.info || {};
