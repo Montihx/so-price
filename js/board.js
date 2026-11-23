@@ -230,7 +230,9 @@ export function CalcRow({ it, onQty, onRemove }) {
 
 /** Иконки категорий (ключи из data/meta.json) */
 export const GROUP_ICON = { all: 'cells', weapons: 'rifle', mods: 'scope', ammo: 'bullet', grenades: 'grenade',
-  equip: 'vest', med: 'medkit', arts: 'crystal', troph: 'paw', items: 'box' };
+  equip: 'vest', med: 'medkit', arts: 'crystal', troph: 'paw', items: 'box',
+  'items/parts': 'wrench', 'items/mutant': 'paw', 'items/tech': 'chip', 'items/chem': 'flask', 'items/food': 'pot',
+  'items/plants': 'leaf', 'items/tools': 'hammer', 'items/blue': 'list', 'items/misc': 'box' };
 
 /** Список категорий с иконками (обычный <select> не показывает картинки в пунктах) */
 export function CatSelect({ options, value, onChange }) {
@@ -269,7 +271,7 @@ export function CatSelect({ options, value, onChange }) {
     open ? h('ul', { className: 'cat-list', role: 'listbox', 'aria-label': 'Категория' },
       options.map((o, i) => h('li', {
         key: o.key, role: 'option', 'aria-selected': o.key === value ? 'true' : 'false',
-        className: 'cat-opt' + (i === hi ? ' is-hi' : '') + (o.key === value ? ' is-cur' : ''),
+        className: 'cat-opt' + (o.sub ? ' is-sub' : '') + (i === hi ? ' is-hi' : '') + (o.key === value ? ' is-cur' : ''),
         onMouseEnter: () => setHi(i), onClick: () => pick(o.key)
       }, item(o)))) : null
   );

@@ -123,10 +123,12 @@ import { CatSelect, BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SI
     /* Фильтрация данных по поисковому запросу */
     const filtered = useMemo(() => {
       const q = norm(qDeb);
-      const gi = cat === 'all' ? -1 : meta.groups.findIndex(g => g[0] === cat);
+      const [gk, sk] = cat.split('/');
+      const gi = cat === 'all' ? -1 : meta.groups.findIndex(g => g[0] === gk);
+      const si = sk && meta.sub ? meta.sub.findIndex(x => x[0] === sk) : -1;
       // поиск по нормализованному названию и кириллической транслитерации; категория
       return data.filter(x =>
-        (gi < 0 || meta.g[x.item_id] === gi) &&
+        (gi < 0 || meta.g[x.item_id] === gi) && (si < 0 || (meta.sg && meta.sg[x.item_id] === si)) &&
         (!q || norm(x.item_name).includes(q) || norm(latinToCyrillic(x.item_name)).includes(q))
       );
     }, [data, qDeb, cat, meta]);
@@ -255,7 +257,17 @@ import { CatSelect, BoardRow, GridCell, SortHead, Pager, PAGE_SIZE, GRID_PAGE_SI
     const catOptions = useMemo(() => {
       const n = meta.groups.map(() => 0);
       for (const x of data) { const g = meta.g[x.item_id]; if (g != null) n[g]++; }
-      return [{ key: 'all', label: 'Все', count: data.length }].concat(meta.groups.map(([k, t], i) => ({ key: k, label: t, count: n[i] })));
+      const out = [{ key: 'all', label: 'Все', count: data.length }];
+      meta.groups.forEach(([k, t], i) => {
+        out.push({ key: k, label: t, count: n[i] });
+        // «Прочее» — с подкатегориями (вложенные пункты)
+        if (k === 'items' && meta.sub && meta.sg) {
+          const sn = meta.sub.map(() => 0);
+          for (const x of data) { const v = meta.sg[x.item_id]; if (v != null && meta.g[x.item_id] === i) sn[v]++; }
+          meta.sub.forEach(([sk, st], j) => { if (sn[j]) out.push({ key: k + '/' + sk, label: st, count: sn[j], sub: true }); });
+        }
+      });
+      return out;
     }, [meta, data]);
 
     const isSel = (r) => !!selected && (r.item_id || r._i) === (selected.item_id || selected._i);

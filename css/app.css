@@ -472,3 +472,10 @@ a { color: var(--gold); }
 .card-links .link { margin-top: 0; }
 .link-btn { display: inline-flex; align-items: center; gap: 4px; padding: 0; background: none; border: 0; color: var(--gold); cursor: pointer; }
 @media (max-width: 480px) { .catsel { margin-left: 0; } .cat-list { left: 0; right: auto; } }
+
+/* подкатегории в списке категорий */
+.cat-list { max-height: min(70vh, 560px); overflow: auto; scrollbar-width: thin; scrollbar-color: #4a4a4a transparent; }
+.cat-opt.is-sub { min-height: 26px; padding-left: calc(var(--s2) + 18px); font-size: 13px; background: linear-gradient(90deg, #2d2d2d, #282828); }
+.cat-opt.is-sub .cat-ico { opacity: .8; }
+.cat-opt.is-sub.is-hi { background: var(--row-hi); }
+.cat-btn { min-width: 220px; }
